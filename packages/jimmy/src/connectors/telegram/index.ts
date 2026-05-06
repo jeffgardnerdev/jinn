@@ -98,7 +98,7 @@ export class TelegramConnector implements Connector {
       let messageText: string =
         (telegramMsg as any).text || (telegramMsg as any).caption || "";
 
-      // File attachments (document / photo / video) → save to FILES_DIR + register
+      // File attachments (document / photo / video) → save to FILES_DIR and register
       type AttachmentSpec = {
         file_id: string;
         suggestedName?: string;
@@ -106,29 +106,34 @@ export class TelegramConnector implements Connector {
         kind: "document" | "photo" | "video";
       };
       const attachmentSpecs: AttachmentSpec[] = [];
-      const tg = telegramMsg as any;
-      if (tg.document) {
+      if ((telegramMsg as any).document) {
         attachmentSpecs.push({
-          file_id: tg.document.file_id,
-          suggestedName: tg.document.file_name,
-          mime: tg.document.mime_type,
+          file_id: (telegramMsg as any).document.file_id,
+          suggestedName: (telegramMsg as any).document.file_name,
+          mime: (telegramMsg as any).document.mime_type,
           kind: "document",
         });
       }
-      if (tg.photo && tg.photo.length > 0) {
+      if (
+        (telegramMsg as any).photo &&
+        (telegramMsg as any).photo.length > 0
+      ) {
         // Telegram returns size variants; the largest is last.
-        const largest = tg.photo[tg.photo.length - 1];
+        const largest = (telegramMsg as any).photo[
+          (telegramMsg as any).photo.length - 1
+        ];
         attachmentSpecs.push({
           file_id: largest.file_id,
+          suggestedName: undefined,
           mime: "image/jpeg",
           kind: "photo",
         });
       }
-      if (tg.video) {
+      if ((telegramMsg as any).video) {
         attachmentSpecs.push({
-          file_id: tg.video.file_id,
-          suggestedName: tg.video.file_name,
-          mime: tg.video.mime_type || "video/mp4",
+          file_id: (telegramMsg as any).video.file_id,
+          suggestedName: (telegramMsg as any).video.file_name,
+          mime: (telegramMsg as any).video.mime_type || "video/mp4",
           kind: "video",
         });
       }
@@ -154,7 +159,8 @@ export class TelegramConnector implements Connector {
               (spec.suggestedName && path.extname(spec.suggestedName)) ||
               path.extname(downloaded) ||
               "";
-            const finalPath = path.join(FILES_DIR, `${id}${ext}`);
+            const finalName = `${id}${ext}`;
+            const finalPath = path.join(FILES_DIR, finalName);
             fs.copyFileSync(downloaded, finalPath);
             const stat = fs.statSync(finalPath);
             const displayName =
